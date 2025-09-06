@@ -1,6 +1,9 @@
 import os
 from typing import Optional, List
+
+from jinja2 import PrefixLoader
 from pydantic.v1 import BaseSettings
+from starlette.templating import Jinja2Templates
 from uuid_extensions import uuid7
 from dotenv_ import (
     POSTGRES_PORT,
@@ -10,7 +13,12 @@ from dotenv_ import (
     POSTGRES_HOST,
     BASE_DIR,
     DEBUG,
+    APP_HOST,
+    APP_PORT,
+    DATABASE_ENGINE_REMOTE,
 )
+
+# TEMPLATE
 
 
 # SETTING
@@ -18,13 +26,24 @@ class Settings(BaseSettings):
     SQLITE_DB_PATH: str = (os.path.join(BASE_DIR, "truckdriver_db.sqlite3")).replace(
         "\\", "/"
     )
-    SECRET_KEY = uuid7()
+    SECRET_KEY = str(uuid7())
     POSTGRES_PORT: str = POSTGRES_PORT
     POSTGRES_DB: str = POSTGRES_DB
     POSTGRES_PASSWORD: str = POSTGRES_PASSWORD
     POSTGRES_USER: str = POSTGRES_USER
     POSTGRES_HOST: str = POSTGRES_HOST
-    ALLOWED_ORIGINS: List[str] = ["127.0.0.1", "83.166.245.209"]
+    ALLOWED_ORIGINS: List[str] = [
+        f"http://{APP_HOST}",
+        f"http://{APP_HOST}:{int(APP_PORT)}",
+        f"http://{DATABASE_ENGINE_REMOTE}",
+        "http://0.0.0.0:8000",
+    ]
+    ALLOWED_ORIGIN_REGEX: List[str] = [
+        f"http://{APP_HOST}",
+        f"http://{APP_HOST}:{int(APP_PORT)}",
+        f"http://{DATABASE_ENGINE_REMOTE}",
+        "http://0.0.0.0:8000",
+    ]
     ALLOWED_METHODS: List[str] = [
         "HEAD",
         "OPTIONS",
@@ -35,9 +54,26 @@ class Settings(BaseSettings):
         "PATCH",
         "POST",
     ]
+    ALLOWED_HEADERS: List[str] = [
+        "accept",
+        "accept-encoding",
+        "Authorization",
+        "content-type",
+        "dnt",
+        "origin",
+        "user-agent",
+        "x-csrftoken",
+        "x-requested-with",
+        "Accept-Language",
+        "Content-Language",
+    ]
+    TEMPLATES_DIR: str = (os.path.join(BASE_DIR, "truckdriver_db.sqlite3")).replace(
+        "\\", "/"
+    )
     CSRF_COOKIE_HTTPONLY: bool = False
     CSRF_COOKIE_SAMESITE: str = "lax"
     CSRF_COOKIE_SECURE: bool = not DEBUG
+    CSRF_COOKIE_MAX_AGE: int = 20
 
     @property
     def DATABASE_URL_PS(self) -> str:
@@ -61,7 +97,7 @@ async def create_db(settings: Settings()):
             text(
                 """SELECT %s FROM sqlite_master WHERE name ='%s';"""
                 % (1, settings.POSTGRES_DB)
-            )
+            ),
         )
 
         exists = result.scalar()

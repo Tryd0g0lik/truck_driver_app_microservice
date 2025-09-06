@@ -1,11 +1,14 @@
 import asyncio
 import os
-from fastapi import FastAPI
+from http.client import HTTPException
+
+from fastapi import FastAPI, APIRouter
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+from rich import status
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
-
+from project.routers.internal.views import router as interal_router
 
 from dotenv_ import (
     BASE_DIR,
@@ -13,31 +16,20 @@ from dotenv_ import (
     APP_PORT,
 )
 from project.db.corn import Settings
-from project.middleware import CustomHeaderMiddleware
+from project.middlewares import CustomHeaderMiddleware
 
 settings = Settings()
 # JINJA
-render = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
+
 middleware_list = [
     Middleware(
         CORSMiddleware,
         allow_origins=settings.ALLOWED_ORIGINS,
         allow_credentials=True,
         allow_methods=settings.ALLOWED_METHODS,
-        allow_headers=[
-            "accept",
-            "accept-encoding",
-            "Authorization",
-            "content-type",
-            "dnt",
-            "origin",
-            "user-agent",
-            "x-csrftoken",
-            "x-requested-with",
-            "Accept-Language",
-            "Content-Language",
-        ],
+        allow_headers=settings.ALLOWED_HEADERS,
         expose_headers=["X-CSRF-Token", "http"],
+        # allow_origin_regex=settings.ALLOWED_ORIGIN_REGEX,
     ),
     Middleware(CustomHeaderMiddleware, secret_key=settings.SECRET_KEY),
 ]
@@ -53,8 +45,10 @@ app = FastAPI(
     description="App where truck-driver is working with a map.",
     middleware=middleware_list,
 )
-
+app.include_router(interal_router)
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+
 if __name__ == "__main__":
     import uvicorn
 
