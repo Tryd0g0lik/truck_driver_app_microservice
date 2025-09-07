@@ -1,13 +1,11 @@
-import asyncio
 import os
-from http.client import HTTPException
-
 from fastapi import FastAPI, APIRouter
-from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from rich import status
+
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
+
+from project.db.models import Database
 from project.routers.internal.views import router as interal_router
 
 from dotenv_ import (
@@ -48,10 +46,15 @@ app = FastAPI(
 app.include_router(interal_router)
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
+db = Database(settings.DATABASE_URL_SQLITE)
+
 
 if __name__ == "__main__":
     import uvicorn
 
+    # START - SYNC & ASYNC session by creating the db
+    db.table_exists_create()
+    # RUN APP
     uvicorn.run(
         "main:app",
         host=APP_HOST,
