@@ -1,11 +1,14 @@
+import asyncio
 import os
 from fastapi import FastAPI, APIRouter
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy.orm import Session
+
 
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 
-from project.db.models import Database
+from project.db.models import Database, SessionUserModel
 from project.routers.internal.views import router as interal_router
 
 from dotenv_ import (
@@ -27,7 +30,6 @@ middleware_list = [
         allow_methods=settings.ALLOWED_METHODS,
         allow_headers=settings.ALLOWED_HEADERS,
         expose_headers=["X-CSRF-Token", "http"],
-        # allow_origin_regex=settings.ALLOWED_ORIGIN_REGEX,
     ),
     Middleware(CustomHeaderMiddleware, secret_key=settings.SECRET_KEY),
 ]
@@ -49,11 +51,20 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 db = Database(settings.DATABASE_URL_SQLITE)
 
 
+async def check_tables():
+    # Get engine
+    db.init_engine()
+    # Check the table 'session'.
+    result = await db.is_table_exists_async(db.engine)
+    # If false, means what we will be creating the tables from models.
+    if not result:
+        await db.table_exists_create()
+
+
 if __name__ == "__main__":
     import uvicorn
 
-    # START - SYNC & ASYNC session by creating the db
-    db.table_exists_create()
+    asyncio.run(check_tables())
     # RUN APP
     uvicorn.run(
         "main:app",

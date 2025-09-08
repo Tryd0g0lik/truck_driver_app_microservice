@@ -3,7 +3,7 @@ import dotenv
 
 
 dotenv.load_dotenv()
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+BASE_DIR = os.path.dirname(__file__)
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
 # db

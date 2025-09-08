@@ -1,9 +1,6 @@
 import os
-from typing import Optional, List
-from sqlalchemy import text, MetaData
-from jinja2 import PrefixLoader
+from typing import List
 from pydantic.v1 import BaseSettings
-from starlette.templating import Jinja2Templates
 from uuid_extensions import uuid7
 from dotenv_ import (
     POSTGRES_PORT,
@@ -91,9 +88,7 @@ class Settings(BaseSettings):
         return f"sqlite+aiosqlite:///{self.SQLITE_DB_PATH}"
 
 
-meta = MetaData()
-
-
+# УДАЛИТЬ
 async def create_db(settings: Settings()):
     from sqlalchemy import text
     from sqlalchemy.ext.asyncio import create_async_engine
