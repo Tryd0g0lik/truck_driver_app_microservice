@@ -1,6 +1,9 @@
 import logging
 import re
+from typing import Callable, Coroutine
+
 import pytest
+from sqlalchemy import func
 
 from uuid_extensions import uuid7
 
@@ -26,6 +29,16 @@ def async_engine():
 
     return catch
 
+@pytest.fixture
+def drop_test(async_engine) -> Callable[[], Coroutine]:
+    from sqlalchemy import delete
+
+    async def catch() -> None:
+        async with async_engine().engine.begin() as conn:
+            """Async engine. DELETE the all views/rows in relational db"""
+            await conn.execute(delete(SessionUserModel))
+            await conn.commit()
+    return catch
 
 class TestSessionUserModel:
 
@@ -50,7 +63,7 @@ class TestSessionUserModel:
             await conn.close()
 
     @pytest.mark.asyncio
-    async def test_session_user_required_fields(self) -> None:
+    async def test_session_user_required_fields(self, drop_test) -> None:
         """
         This test is:
          1) creates a one view of line/row;
@@ -81,7 +94,5 @@ class TestSessionUserModel:
             result_bool = True if re.fullmatch(regex, list(respon[-1])[1]) else False
             assert True == result_bool
             assert list(respon[-1])[1] == str(session_id_)
-        async with db.engine.begin() as conn:
-            """3) Async engine. DELETE the all views/rows in relational db"""
-            await conn.execute(delete(SessionUserModel))
-            await conn.commit()
+        """3) Async engine. DELETE the all views/rows in relational db"""
+        await drop_test()
