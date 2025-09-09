@@ -22,4 +22,4 @@ exclude =
     dotenv_,
     manage,
     logs.py,
-    __tests__/
+    __tests__/*

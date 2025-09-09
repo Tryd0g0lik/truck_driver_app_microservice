@@ -1,7 +1,8 @@
 import asyncio
 import logging
 import re
-from typing import List
+
+from sqlalchemy.orm import validates, Session
 
 from pydantic import BaseModel, ConfigDict
 
@@ -16,7 +17,7 @@ from sqlalchemy import (
 )
 from datetime import datetime, timedelta
 
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base, Mapped, sessionmaker
 from watchfiles import awatch
 
@@ -46,13 +47,42 @@ class SessionUserModel(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     session_id = Column(
         "session",
-        String,
+        String(40),
         unique=True,
         nullable=False,
-        comment="Session ID for anyone of user",
+        comment="Session ID for anyone of user/ Min length 30 and max length 40 symbols",
     )
     created_at = Column(DateTime, default=datetime.now())
     expires_at = Column(DateTime, default=lambda: datetime.now() + timedelta(hours=1))
+
+    @validates("session_id")
+    def validate_session_id_regex(self, key, session_id: str):
+        regex = r"([a-zA-A0-9][a-zA-A0-9-]*[a-zA-A0-9]$)"
+        if not re.fullmatch(regex, session_id):
+            raise ValueError(
+                "%s: Session_id don't match regex"
+                % (self.validate_session_id.__name__,)
+            )
+        log.info(
+            "%s: Session ID regex matched: %s"
+            % (self.validate_session_id_regex.__name__, session_id)
+        )
+        return session_id
+
+    @validates("session_id_length")
+    def validate_session_id_length(self, key, session_id):
+        # Valid the length of session_id
+        if len(session_id) < 30:
+            raise ValueError(
+                "%s: Session ID must be at least 30 characters long"
+                % (self.validate_session_id.__name__,)
+            )
+        if len(session_id) > 40:
+            raise ValueError(
+                "%s: Session ID must be at exceed 40 characters"
+                % (self.validate_session_id.__name__,)
+            )
+        return session_id
 
     @property
     def is_expired(self) -> bool:
@@ -88,30 +118,35 @@ class SessionUserModel(Base):
 
 
 class Database:
-    def __init__(self, db_url: str) -> None:
+    def __init__(self, path_in_db: str) -> None:
         """
         :param db_url: str This is url/path to the database
         :param is_async: bool
         engine = None
-        session_factory = None
+        session_factory = None or sessionmaker(engine)
         :param db_url:
         Example:
-        ````python
+        ````
         db = Database(settings.DATABASE_URL_SQLITE)
 
         async def test_records():
-            db() # Here we define the engine.
-            session = Session(db.engine)
-            async with db.session_factory() as session:
-                session_user_ = SessionUserModel( session_id="dsasda")
-                session.add(session_user_)
-                await session.commit()
-        ```
+            db = Database(settings.DATABASE_URL_SQLITE)
+            db.init_engine()
+
+            async with db.engine.connect() as conn:
+                result = await conn.execute(text'''SELECT * FROM session'''))
+                respon = result.fetchall()
+                assert type(respon) == list
+                assert  len(respon) >= 1
+                regex = r'([a-zA-A0-9][a-zA-A0-9-]*[a-zA-A0-9]$)'
+                result_bool = True if re.fullmatch(regex, list(respon[0])[1]) else False
+                assert True == result_bool
+            ```
         """
-        self.db_url: str = db_url
-        self.is_async = self._check_async_url(db_url)
+        self.path_in_db: str = path_in_db
+        self.is_async = self._check_async_url(path_in_db)
         self.engine = None
-        self.session_factory = None
+        self.session_factory: Session = None
 
     def init_engine(self) -> None:
         """
@@ -128,23 +163,23 @@ class Database:
         """
         if self.is_async:
             self.engine = create_async_engine(
-                self.db_url, echo=True, pool_size=5, max_overflow=10
+                self.path_in_db, echo=True, pool_size=5, max_overflow=10
             )
-            self.session_factory = sessionmaker(
+            self.session_factory = async_sessionmaker(
                 bind=self.engine,
-                class_=AsyncSession,
+                # class_=AsyncSession,
                 autocommit=False,
                 autoflush=False,
             )
         else:
             self.engine = create_engine(
-                self.db_url, echo=True, pool_size=5, max_overflow=10
+                self.path_in_db, echo=True, pool_size=5, max_overflow=10
             )
-            self.session_factory = sessionmaker(
-                bind=self.engine,
-                autocommit=False,
-                autoflush=False,
-            )
+            # self.session_factory = sessionmaker(
+            #     bind=self.engine,
+            #     autocommit=False,
+            #     autoflush=False,
+            # )
 
     async def __create_all_async(self) -> None:
         """
