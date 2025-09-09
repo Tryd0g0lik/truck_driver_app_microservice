@@ -56,31 +56,28 @@ class SessionUserModel(Base):
     expires_at = Column(DateTime, default=lambda: datetime.now() + timedelta(hours=1))
 
     @validates("session_id")
-    def validate_session_id_regex(self, key, session_id: str):
+    def validate_session_id_regex(self, key, session_id: str) -> str:
         regex = r"([a-zA-A0-9][a-zA-A0-9-]*[a-zA-A0-9]$)"
         if not re.fullmatch(regex, session_id):
             raise ValueError(
                 "%s: Session_id don't match regex"
-                % (self.validate_session_id.__name__,)
+                % (self.validate_session_id_regex.__name__,)
             )
         log.info(
             "%s: Session ID regex matched: %s"
             % (self.validate_session_id_regex.__name__, session_id)
         )
-        return session_id
 
-    @validates("session_id_length")
-    def validate_session_id_length(self, key, session_id):
         # Valid the length of session_id
         if len(session_id) < 30:
             raise ValueError(
                 "%s: Session ID must be at least 30 characters long"
-                % (self.validate_session_id.__name__,)
+                % (self.validate_session_id_regex.__name__,)
             )
         if len(session_id) > 40:
             raise ValueError(
                 "%s: Session ID must be at exceed 40 characters"
-                % (self.validate_session_id.__name__,)
+                % (self.validate_session_id_regex.__name__,)
             )
         return session_id
 
