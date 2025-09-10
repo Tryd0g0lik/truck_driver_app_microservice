@@ -38,7 +38,6 @@ class Settings(BaseSettings):
     POSTGRES_HOST: str = POSTGRES_HOST
     # CORS
     ALLOWED_ORIGINS: List[str] = [
-        f"http://{APP_HOST}",
         f"http://{APP_HOST}:{int(APP_PORT)}",
         f"http://{DATABASE_ENGINE_REMOTE}",
         "http://0.0.0.0:8000",
