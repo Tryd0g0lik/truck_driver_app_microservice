@@ -30,7 +30,16 @@ class ContentType(Enum):
 
 class AsyncHttpClient:
     """
-    This client is built on the library aiohttp
+    This client is built on the library aiohttp.
+    "User-Agent": "AsyncHttpClient/1.0",
+    Example:
+    ```
+        client = AsyncHttpClient()
+        method = "POST"
+        responses = await client.request(
+            method, url=url, jsom_data={"string": ["Hallo word"]}
+        )
+    ```
     """
 
     message = "AsyncHttpClient"
@@ -55,7 +64,7 @@ class AsyncHttpClient:
         auth: Optional[aiohttp.BasicAuth] = None,
     ) -> dict:
         """
-        Async HTTP request.
+        Async HTTP request for
         """
         request_headers = self.headers.copy()
         if headers:

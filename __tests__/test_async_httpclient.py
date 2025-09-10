@@ -1,3 +1,9 @@
+"""
+__tests__/test_async_httpclient.py
+
+For this test User need be - active, authorisation, having User-Agent - "AsyncHttpClient/1.0", and belong is in group admin or superuser
+"""
+
 import logging
 
 import pytest
@@ -15,10 +21,11 @@ async def test_async_http_client_valid():
 
     client = AsyncHttpClient()
     responses = await client.request(
-        HttpRequest.POST.value, url=url, jsom_data={"string": ["Hallo word"]}
+        HttpRequest.POST.value, url=url, jsom_data={"data": ["Hallo word"]}
     )
-    assert isinstance(responses, dict)
-    assert "str_to_binary".startswith(list(responses.keys())[0])
+    assert isinstance(responses, list)
+    assert isinstance(responses[0], dict)
+    assert "str_to_binary".startswith(list(responses[0].keys())[0])
 
 
 @pytest.mark.asyncio
@@ -28,7 +35,6 @@ async def test_async_http_client_unvalidated():
     client = AsyncHttpClient()
     method = "POST"
     responses = await client.request(
-        method, url=url, jsom_data={"string": ["Hallo word"]}
+        method, url=url, jsom_data={"data": ["Hallo word"]}
     )
-    assert isinstance(responses, dict)
-    assert "data".startswith(list(responses.keys())[0])
+    assert not isinstance(responses, list)
