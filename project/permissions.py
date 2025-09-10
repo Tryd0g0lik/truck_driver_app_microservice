@@ -1,5 +1,8 @@
+"""
+project/permissions.py
+"""
+
 from fastapi import HTTPException, status, Request
-from typing import Optional, List
 
 
 class BasePermission:

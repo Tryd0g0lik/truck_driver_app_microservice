@@ -1,3 +1,7 @@
+"""
+project/middlewares.py
+"""
+
 import secrets
 from fastapi import Request, Response, HTTPException, status
 from typing import Callable, Awaitable

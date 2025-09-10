@@ -1,8 +1,10 @@
+"""
+project/db/models.py
+"""
+
 import asyncio
 import logging
 import re
-from typing import List
-
 from pydantic import BaseModel, ConfigDict
 
 from sqlalchemy import (
@@ -12,13 +14,12 @@ from sqlalchemy import (
     String,
     ColumnElement,
     create_engine,
-    inspect,
 )
 from datetime import datetime, timedelta
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import declarative_base, Mapped, sessionmaker
-from watchfiles import awatch
+from sqlalchemy.orm import declarative_base, sessionmaker
+
 
 from logs import configure_logging
 
