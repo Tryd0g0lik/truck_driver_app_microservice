@@ -59,7 +59,7 @@ class IsOwnerRaport(BasePermission):
         )
 
 
-class IsManipulater(BasePermission):
+class IsManipulate(BasePermission):
     """Allows access only for managers"""
 
     def has_permissions(self, request: Request) -> bool:
@@ -67,3 +67,9 @@ class IsManipulater(BasePermission):
             IsActive().has_permissions(request)
             and request.user.groups.filter(name__in=["MANAGER", "Manager"]).exists()
         )
+
+
+is_active = IsActive.has_permission
+is_aLL = IsAll.has_permission
+is_reader = IsReader.has_permission
+is_ownerraport = IsOwnerRaport.has_permission
