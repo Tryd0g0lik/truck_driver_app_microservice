@@ -1,6 +1,8 @@
-from fastapi import status, HTTPException, APIRouter  # , Request,
+"""
+project/routers/internal/views.py
+"""
 
-# from starlette.responses import HTMLResponse, JSONResponse
+from fastapi import status, HTTPException, APIRouter
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 

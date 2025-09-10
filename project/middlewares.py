@@ -1,6 +1,12 @@
+"""
+project/middlewares.py
+"""
+
 import secrets
-from fastapi import Request, Response, HTTPException, status
-from typing import Callable, Awaitable
+from enum import Enum
+
+from fastapi import Request, Response, HTTPException, status, FastAPI
+from typing import Callable, Awaitable, Union
 from starlette.middleware.base import BaseHTTPMiddleware
 
 
@@ -72,3 +78,34 @@ class CustomHeaderMiddleware(BaseHTTPMiddleware):
         # For some html methods.
         else:
             return await call_next(request)
+
+
+class JWTTokenName(Enum):
+    ACCESS = "token_access"
+    REFRESH = "token_refresh"
+
+
+# JWT-token
+class CustomJWTMiddleware(BaseHTTPMiddleware):
+    def __init__(
+        self, app: FastAPI, header_name: JWTTokenName = JWTTokenName.ACCESS.value
+    ) -> None:
+        super().__init__(app)
+        self.header_name = header_name
+
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
+        jwt_token = ""
+        if list(request.headers.keys()):
+            # ACCESS token
+            if JWTTokenName.ACCESS.value in list(request.headers.keys()):
+                jwt_token += "".join([request.headers[JWTTokenName.ACCESS.value]])
+            # REFRESH token
+            elif JWTTokenName.REFRESH.name in list(request.headers.keys()):
+                jwt_token += "".join([request.headers[JWTTokenName.REFRESH.name]])
+            if len(jwt_token) == 0:
+                return await call_next(request)
+            #
+
+        return await call_next(request)
